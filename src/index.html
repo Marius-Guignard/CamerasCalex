@@ -6,21 +6,32 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <button id="openSettings" title="Réglages">⚙</button>
-
   <section id="home">
     <h1>Mes caméras</h1>
-    <p class="hint">Choisis une caméra pour voir l'image en direct. L'enregistrement continue tout seul en arrière-plan.</p>
-    <div id="list"></div>
+    <p class="hint">Choisis une caméra pour voir l'image en direct et les derniers enregistrements. L'enregistrement continue tout seul en arrière-plan.</p>
+    <div id="list">
+      <div id="settingsCard" class="card-cam settings-card">
+        <div class="n">⚙ Réglages</div>
+        <div class="s">Accès Tuya, dossier des vidéos, durée des fichiers</div>
+      </div>
+    </div>
   </section>
 
   <section id="viewer" class="hidden">
-    <div class="bar">
-      <button id="back" class="ghost">← Mes caméras</button>
-      <span id="camName"></span>
-      <span id="camRec" class="rec"></span>
+    <div class="main">
+      <div class="bar">
+        <button id="back" class="ghost">← Mes caméras</button>
+        <span id="camName"></span>
+        <span id="mode" class="mode"></span>
+        <button id="goLive" class="hidden">● Revenir au direct</button>
+        <span id="camRec" class="rec"></span>
+      </div>
+      <video id="video" muted autoplay playsinline></video>
     </div>
-    <video id="video" muted autoplay playsinline></video>
+    <aside id="files">
+      <h3>Derniers enregistrements</h3>
+      <div id="fileList"></div>
+    </aside>
   </section>
 
   <div id="msg" class="msg"></div>
