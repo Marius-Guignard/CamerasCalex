@@ -6,9 +6,23 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="tabs"></div>
   <button id="openSettings" title="Réglages">⚙</button>
-  <div id="grid"></div>
+
+  <section id="home">
+    <h1>Mes caméras</h1>
+    <p class="hint">Choisis une caméra pour voir l'image en direct. L'enregistrement continue tout seul en arrière-plan.</p>
+    <div id="list"></div>
+  </section>
+
+  <section id="viewer" class="hidden">
+    <div class="bar">
+      <button id="back" class="ghost">← Mes caméras</button>
+      <span id="camName"></span>
+      <span id="camRec" class="rec"></span>
+    </div>
+    <video id="video" muted autoplay playsinline></video>
+  </section>
+
   <div id="msg" class="msg"></div>
 
   <div id="settings" class="modal hidden">

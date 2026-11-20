@@ -1,6 +1,6 @@
 {
   "name": "cameras-calex",
-  "version": "1.0.3",
+  "version": "1.0.0",
   "description": "Mes caméras Calex : direct et enregistrement automatique",
   "author": "Marius Guignard",
   "main": "src/main.js",
@@ -24,19 +24,10 @@
   "build": {
     "appId": "fr.marius.cameras-calex",
     "productName": "Mes cameras Calex",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "src/**/*",
-      "package.json"
-    ],
-    "asarUnpack": [
-      "node_modules/ffmpeg-static/**"
-    ],
-    "win": {
-      "target": "nsis"
-    },
+    "directories": { "output": "dist" },
+    "files": ["src/**/*", "package.json"],
+    "asarUnpack": ["node_modules/ffmpeg-static/**"],
+    "win": { "target": "nsis" },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
@@ -44,11 +35,7 @@
       "createDesktopShortcut": true
     },
     "publish": [
-      {
-        "provider": "github",
-        "owner": "Marius-Guignard",
-        "repo": "CamerasCalex"
-      }
+      { "provider": "github", "owner": "Marius-Guignard", "repo": "CamerasCalex", "releaseType": "release" }
     ]
   }
 }

@@ -1,78 +1,112 @@
 const $ = (id) => document.getElementById(id);
-const tiles = new Map(); // deviceId -> { hls, video, recEl }
+let devices = [];
+let current = null;
+let hls = null;
+const recState = {};
 
 function say(text, ok = false) {
   $('msg').textContent = text || '';
   $('msg').className = 'msg' + (ok ? ' ok' : '');
 }
 
-function layout(n) {
-  const cols = Math.ceil(Math.sqrt(n));
-  const rows = Math.ceil(n / cols);
-  $('grid').style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-  $('grid').style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+function recLabel(deviceId) {
+  const s = recState[deviceId];
+  if (!s) return { text: 'Enregistrement : démarrage…', cls: '' };
+  if (s === 'Enregistrement en cours') return { text: 'Enregistrement en cours', cls: 'rec' };
+  return { text: s, cls: '' };
 }
 
-function setRec(deviceId, status) {
-  const t = tiles.get(deviceId);
-  if (!t) return;
-  const on = status === 'Enregistrement en cours';
-  t.recEl.className = 'rec' + (on ? ' on' : '');
-  t.recEl.innerHTML = `<i></i>${on ? 'REC' : status}`;
+// Écran d'accueil : on choisit la caméra, rien ne s'affiche tant qu'on n'a pas cliqué
+function renderList() {
+  const box = $('list');
+  box.innerHTML = '';
+  for (const d of devices) {
+    const r = recLabel(d.id);
+    const el = document.createElement('div');
+    el.className = 'card-cam';
+    el.innerHTML = `<div class="n"></div>
+      <div class="s"><span class="dot ${d.online ? 'on' : ''}"></span>${d.online ? 'En ligne' : 'Hors ligne'}</div>
+      <div class="s"><span class="dot ${r.cls}"></span><span class="rt"></span></div>`;
+    el.querySelector('.n').textContent = d.name;
+    el.querySelector('.rt').textContent = r.text;
+    el.onclick = () => openCamera(d);
+    box.appendChild(el);
+  }
 }
 
-async function startPlayer(device, tile) {
+function updateViewerRec() {
+  if (!current) return;
+  const r = recLabel(current.id);
+  $('camRec').innerHTML = `<span class="dot ${r.cls}"></span>${r.text}`;
+}
+
+function stopPlayer() {
+  if (hls) { hls.destroy(); hls = null; }
+  const v = $('video');
+  v.removeAttribute('src');
+  v.load();
+}
+
+async function startPlayer(device) {
   try {
     const url = await window.api.getStream(device.id);
-    if (tile.hls) { tile.hls.destroy(); tile.hls = null; }
+    if (!current || current.id !== device.id) return; // l'utilisateur est déjà revenu en arrière
+    stopPlayer();
+    const v = $('video');
     if (window.Hls && Hls.isSupported()) {
-      tile.hls = new Hls({ lowLatencyMode: true });
-      tile.hls.loadSource(url);
-      tile.hls.attachMedia(tile.video);
-      tile.hls.on(Hls.Events.ERROR, (_e, data) => {
-        if (data.fatal) setTimeout(() => startPlayer(device, tile), 5000);
+      hls = new Hls({ lowLatencyMode: true });
+      hls.loadSource(url);
+      hls.attachMedia(v);
+      hls.on(Hls.Events.ERROR, (_e, data) => {
+        if (data.fatal) setTimeout(() => { if (current && current.id === device.id) startPlayer(device); }, 5000);
       });
     } else {
-      tile.video.src = url;
+      v.src = url;
     }
-    tile.video.play().catch(() => {});
+    v.play().catch(() => {});
     say('');
   } catch (e) {
     say(e.message + '\n(Vérifie que « IoT Video Live Stream » est bien autorisé sur ton projet Tuya.)');
-    setTimeout(() => startPlayer(device, tile), 30000);
   }
 }
+
+function openCamera(d) {
+  current = d;
+  $('home').classList.add('hidden');
+  $('viewer').classList.remove('hidden');
+  $('openSettings').classList.add('hidden');
+  $('camName').textContent = d.name;
+  updateViewerRec();
+  say('Connexion au flux vidéo…', true);
+  startPlayer(d);
+}
+
+$('back').onclick = () => {
+  current = null;
+  stopPlayer();
+  $('viewer').classList.add('hidden');
+  $('home').classList.remove('hidden');
+  $('openSettings').classList.remove('hidden');
+  say('');
+  renderList();
+};
 
 async function refresh() {
   say('Chargement des caméras…', true);
   try {
-    const devices = await window.api.listDevices(); // l'enregistrement démarre tout seul
-    for (const t of tiles.values()) if (t.hls) t.hls.destroy();
-    tiles.clear();
-    $('grid').innerHTML = '';
-    if (!devices.length) {
-      say("Aucune caméra trouvée. Vérifie que Smart Life est bien lié à ton projet Tuya.");
-      return;
-    }
-    layout(devices.length);
-    for (const d of devices) {
-      const el = document.createElement('div');
-      el.className = 'tile';
-      el.innerHTML = `<video muted autoplay playsinline></video><div class="name"></div><div class="rec"><i></i>…</div>`;
-      el.querySelector('.name').textContent = d.name;
-      $('grid').appendChild(el);
-      const tile = { hls: null, video: el.querySelector('video'), recEl: el.querySelector('.rec') };
-      tiles.set(d.id, tile);
-      startPlayer(d, tile);
-    }
-    say('');
+    devices = await window.api.listDevices(); // l'enregistrement démarre tout seul
+    say(devices.length ? '' : "Aucune caméra trouvée. Vérifie que Smart Life est bien lié à ton projet Tuya.");
+    renderList();
   } catch (e) {
     say(e.message);
   }
 }
 
 window.api.onUpdate((text) => say(text, true));
-window.api.onRecordStatus(({ deviceId, status }) => setRec(deviceId, status));
+window.api.onRecordStatus(({ deviceId, status }) => {
+  recState[deviceId] = status;
+  if (current) updateViewerRec(); else renderList();
+});
 
 // Réglages
 async function openSettings() {
