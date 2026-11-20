@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mes caméras Calex</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="tabs"></div>
+  <button id="openSettings" title="Réglages">⚙</button>
+  <div id="grid"></div>
+  <div id="msg" class="msg"></div>
+
+  <div id="settings" class="modal hidden">
+    <div class="card">
+      <h2>Réglages</h2>
+      <label>Access ID <input id="accessId" type="text" autocomplete="off"></label>
+      <label>Access Secret <input id="accessSecret" type="password" autocomplete="off"></label>
+      <label>Serveur Tuya
+        <select id="baseUrl">
+          <option value="https://openapi-weaz.tuyaeu.com">Western Europe</option>
+          <option value="https://openapi.tuyaeu.com">Central Europe</option>
+        </select>
+      </label>
+      <label>Dossier où enregistrer les vidéos (fichiers MP4)
+        <div class="row"><input id="recordFolder" type="text" readonly><button id="chooseFolder" class="ghost">Choisir le dossier…</button></div>
+      </label>
+      <label>Durée d'un fichier MP4 (heures)
+        <input id="segmentHours" type="number" min="1" max="48">
+      </label>
+      <label>Garder les vidéos (jours, 0 = toujours)
+        <input id="retentionDays" type="number" min="0" max="365">
+      </label>
+      <div class="row end">
+        <button id="closeSettings" class="ghost">Fermer</button>
+        <button id="saveSettings">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../node_modules/hls.js/dist/hls.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

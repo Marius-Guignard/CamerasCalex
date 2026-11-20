@@ -1,0 +1,15 @@
+MES CAMERAS CALEX
+=================
+
+1. Dézippe le dossier où tu veux.
+2. Double-clique sur Lancer.bat (la première fois, il télécharge ce qu'il faut : quelques minutes, internet nécessaire).
+3. Dans Réglages, saisis :
+   - Access ID et Access Secret (page Overview de ton projet sur iot.tuya.com)
+   - Serveur : Western Europe (comme ton projet)
+4. Clique sur Enregistrer : tes caméras apparaissent à gauche.
+5. L'appli affiche seulement l'image en direct de tes caméras.
+   L'enregistrement démarre tout seul dans le dossier choisi dans Réglages (roue dentée en haut à gauche).
+
+Les vidéos sont rangées dans Vidéos\CamerasCalex, en un fichier MP4 par tranche de 24 heures.
+Les plus anciens (plus de 3 jours) sont supprimés tout seuls. Réglable dans Réglages.
+Le son n'est pas enregistré.
