@@ -33,6 +33,18 @@ function renderList() {
       <div class="s"><span class="dot ${r.cls}"></span><span class="rt"></span></div>`;
     el.querySelector('.n').textContent = d.name;
     el.querySelector('.rt').textContent = r.text;
+    const trash = document.createElement('button');
+    trash.className = 'trash';
+    trash.title = 'Supprimer cet appareil';
+    trash.textContent = '🗑';
+    trash.onclick = async (ev) => {
+      ev.stopPropagation();
+      if (!confirm(`Supprimer « ${d.name} » de l'application ?\n\nL'enregistrement de cette caméra s'arrête. La caméra reste dans Smart Life et les vidéos déjà enregistrées restent dans ton dossier.`)) return;
+      await window.api.hideDevice(d.id);
+      devices = devices.filter((x) => x.id !== d.id);
+      renderList();
+    };
+    el.appendChild(trash);
     el.onclick = () => openCamera(d);
     box.appendChild(el);
   }
@@ -70,6 +82,7 @@ async function playHls(device) {
     v.src = url;
   }
   v.play().catch(() => {});
+  $('mode').textContent = 'En direct (flux standard, plus décalé)';
 }
 
 async function playFlv(device) {
@@ -95,14 +108,34 @@ async function playFlv(device) {
   flv.attachMediaElement(v);
   flv.load();
   v.play().catch(() => {});
+  $('mode').textContent = 'En direct (flux rapide)';
+}
+
+function showVideo(on) {
+  $('video').classList.toggle('hidden', !on);
+  $('idle').classList.toggle('hidden', on);
+}
+
+function showIdle() {
+  mode = 'idle';
+  activeFile = null;
+  stopPlayer();
+  showVideo(false);
+  $('mode').textContent = '';
+  $('goLive').classList.remove('hidden');
+  $('stopLive').classList.add('hidden');
+  highlightFile();
+  say('');
 }
 
 async function startLive(device) {
   mode = 'live';
   activeFile = null;
+  showVideo(true);
   $('video').controls = false;
   $('mode').textContent = 'En direct';
   $('goLive').classList.add('hidden');
+  $('stopLive').classList.remove('hidden');
   highlightFile();
   say('Connexion au flux vidéo…', true);
   try {
@@ -122,6 +155,7 @@ function playFile(f) {
   mode = 'file';
   activeFile = f.name;
   stopPlayer();
+  showVideo(true);
   const v = $('video');
   v.controls = true;
   v.muted = true;
@@ -129,6 +163,7 @@ function playFile(f) {
   v.play().catch(() => {});
   $('mode').textContent = 'Enregistrement : ' + fileTitle(f);
   $('goLive').classList.remove('hidden');
+  $('stopLive').classList.add('hidden');
   highlightFile();
   say('');
 }
@@ -187,10 +222,11 @@ function openCamera(d) {
   loadFiles();
   clearInterval(filesTimer);
   filesTimer = setInterval(loadFiles, 30000);
-  startLive(d);
+  showIdle(); // l'image en direct ne démarre que si on le demande
 }
 
 $('goLive').onclick = () => { if (current) startLive(current); };
+$('stopLive').onclick = () => showIdle();
 
 $('back').onclick = () => {
   current = null;
@@ -231,6 +267,47 @@ async function openSettings() {
   $('settings').classList.remove('hidden');
 }
 $('settingsCard').onclick = openSettings;
+$('addCard').onclick = () => $('addModal').classList.remove('hidden');
+let pairTimer = null;
+function stopPairing() { clearInterval(pairTimer); pairTimer = null; }
+$('openPair').onclick = () => {
+  $('addModal').classList.add('hidden');
+  $('qrBox').classList.add('hidden');
+  $('pairStatus').textContent = '';
+  $('pairModal').classList.remove('hidden');
+};
+$('closePair').onclick = () => { stopPairing(); $('pairModal').classList.add('hidden'); };
+$('makeQr').onclick = async () => {
+  stopPairing();
+  $('pairStatus').textContent = 'Préparation du QR code…';
+  try {
+    const { qr, token } = await window.api.pairStart($('wifiName').value.trim(), $('wifiPass').value);
+    $('qrImg').src = qr;
+    $('qrBox').classList.remove('hidden');
+    $('pairStatus').textContent = 'Présente ce QR code devant la caméra. En attente de la caméra…';
+    const started = Date.now();
+    pairTimer = setInterval(async () => {
+      if (Date.now() - started > 5 * 60 * 1000) {
+        stopPairing();
+        $('pairStatus').textContent = "Délai dépassé. Vérifie que la caméra clignote, puis clique à nouveau sur « Générer le QR code ».";
+        return;
+      }
+      try {
+        const r = await window.api.pairCheck(token);
+        if (r.found) {
+          stopPairing();
+          $('pairStatus').textContent = 'Caméra ajoutée : ' + r.names.join(', ');
+          setTimeout(() => { $('pairModal').classList.add('hidden'); refresh(); }, 1500);
+        }
+      } catch (e) { /* on réessaie */ }
+    }, 4000);
+  } catch (e) {
+    $('pairStatus').textContent = e.message;
+  }
+};
+$('closeAdd').onclick = () => $('addModal').classList.add('hidden');
+$('unhide').onclick = async () => { await window.api.unhideAll(); $('addModal').classList.add('hidden'); refresh(); };
+$('refreshAdd').onclick = () => { $('addModal').classList.add('hidden'); refresh(); };
 $('closeSettings').onclick = () => $('settings').classList.add('hidden');
 $('chooseFolder').onclick = async () => {
   const f = await window.api.chooseFolder();

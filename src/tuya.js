@@ -70,8 +70,8 @@ class Tuya {
   }
 
   // Adresse du flux vidéo en direct (HLS)
-  async getStreamUrl(deviceId) {
-    const r = await this._call('POST', `/v1.0/devices/${deviceId}/stream/actions/allocate`, { type: 'hls' });
+  async getStreamUrl(deviceId, type = 'hls') {
+    const r = await this._call('POST', `/v1.0/devices/${deviceId}/stream/actions/allocate`, { type });
     return r.url;
   }
 

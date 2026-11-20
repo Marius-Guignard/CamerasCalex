@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { pathToFileURL } = require('url');
 const { Tuya } = require('./tuya');
 const recorder = require('./recorder');
 const { autoUpdater } = require('electron-updater');
@@ -19,7 +20,8 @@ function defaults() {
     recordFolder: path.join(app.getPath('videos'), 'CamerasCalex'),
     segmentHours: 24,
     retentionDays: 3,
-    autoRecord: []
+    autoRecord: [],
+    hiddenDevices: []
   };
 }
 
@@ -106,7 +108,8 @@ ipcMain.handle('config:set', (_e, cfg) => {
 ipcMain.handle('devices:list', async () => {
   const all = await getTuya().listDevices();
   const cams = all.filter((d) => d.category === 'sp');
-  devices = cams.length ? cams : all;
+  const hidden = loadConfig().hiddenDevices || [];
+  devices = (cams.length ? cams : all).filter((d) => !hidden.includes(d.id));
   // Enregistrement automatique de toutes les caméras, dans le dossier choisi
   const cfg = loadConfig();
   for (const d of devices) recorder.start(d, getTuya(), cfg, sendStatus);
@@ -154,6 +157,44 @@ ipcMain.handle('record:resumeAuto', () => {
     if (device) recorder.start(device, getTuya(), cfg, sendStatus);
   }
   return true;
+});
+
+ipcMain.handle('device:hide', (_e, deviceId) => {
+  // Retire la caméra de l'appli (elle reste dans Smart Life, les vidéos restent dans le dossier)
+  recorder.stop(deviceId, sendStatus);
+  const cfg = loadConfig();
+  cfg.hiddenDevices = Array.from(new Set([...(cfg.hiddenDevices || []), deviceId]));
+  cfg.autoRecord = (cfg.autoRecord || []).filter((id) => id !== deviceId);
+  saveConfig(cfg);
+  devices = devices.filter((d) => d.id !== deviceId);
+  return true;
+});
+
+ipcMain.handle('device:unhideAll', () => {
+  const cfg = loadConfig();
+  cfg.hiddenDevices = [];
+  saveConfig(cfg);
+  return true;
+});
+
+ipcMain.handle('files:list', (_e, deviceId) => {
+  const device = devices.find((d) => d.id === deviceId);
+  if (!device) return [];
+  const cfg = loadConfig();
+  const prefix = recorder.safeName(device.name) + '_';
+  try {
+    return fs.readdirSync(cfg.recordFolder)
+      .filter((f) => f.startsWith(prefix) && f.endsWith('.mp4'))
+      .map((f) => {
+        const full = path.join(cfg.recordFolder, f);
+        const st = fs.statSync(full);
+        return { name: f, url: pathToFileURL(full).href, size: st.size, mtime: st.mtimeMs };
+      })
+      .sort((a, b) => b.mtime - a.mtime)
+      .slice(0, 40);
+  } catch (e) {
+    return [];
+  }
 });
 
 ipcMain.handle('folder:open', () => {

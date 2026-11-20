@@ -14,6 +14,10 @@
         <div class="n">⚙ Réglages</div>
         <div class="s">Accès Tuya, dossier des vidéos, durée des fichiers</div>
       </div>
+      <div id="addCard" class="card-cam settings-card">
+        <div class="n">＋ Ajouter un appareil</div>
+        <div class="s">Ajouter une nouvelle caméra</div>
+      </div>
     </div>
   </section>
 
@@ -23,10 +27,12 @@
         <button id="back" class="ghost">← Mes caméras</button>
         <span id="camName"></span>
         <span id="mode" class="mode"></span>
-        <button id="goLive" class="hidden">● Revenir au direct</button>
+        <button id="goLive">● Voir en direct</button>
+        <button id="stopLive" class="ghost hidden">■ Arrêter le direct</button>
         <span id="camRec" class="rec"></span>
       </div>
-      <video id="video" muted autoplay playsinline></video>
+      <div id="idle" class="idle">Choisis un enregistrement dans la liste de droite,<br>ou clique sur <b>● Voir en direct</b>.</div>
+      <video id="video" class="hidden" muted autoplay playsinline></video>
     </div>
     <aside id="files">
       <h3>Derniers enregistrements</h3>
@@ -35,6 +41,24 @@
   </section>
 
   <div id="msg" class="msg"></div>
+
+  <div id="addModal" class="modal hidden">
+    <div class="card">
+      <h2>Ajouter un appareil</h2>
+      <p class="hint" style="margin:0">L'ajout d'une caméra se fait une seule fois avec l'appli <b>Smart Life</b> sur ton téléphone (la caméra a besoin de ton Wi-Fi). Ensuite, elle apparaît ici toute seule.</p>
+      <ol class="steps">
+        <li>Ouvre <b>Smart Life</b> sur ton téléphone.</li>
+        <li>Touche <b>« + »</b>, puis <b>Ajouter un appareil</b>, puis choisis <b>Caméra PTZ</b> ou <b>Caméra de sécurité Wi-Fi</b>.</li>
+        <li>Suis les étapes (Wi-Fi 2,4 GHz, QR code devant la caméra).</li>
+        <li>Reviens ici et clique sur le bouton ci-dessous.</li>
+      </ol>
+      <button id="unhide" class="ghost">Réafficher les caméras que j'ai supprimées</button>
+      <div class="row end">
+        <button id="closeAdd" class="ghost">Fermer</button>
+        <button id="refreshAdd">J'ai ajouté ma caméra : actualiser</button>
+      </div>
+    </div>
+  </div>
 
   <div id="settings" class="modal hidden">
     <div class="card">
