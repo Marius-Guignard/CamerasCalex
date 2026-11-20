@@ -113,7 +113,7 @@ ipcMain.handle('devices:list', async () => {
   return devices;
 });
 
-ipcMain.handle('stream:get', async (_e, deviceId) => getTuya().getStreamUrl(deviceId));
+ipcMain.handle('stream:get', async (_e, deviceId, type) => getTuya().getStreamUrl(deviceId, type || 'hls'));
 
 const DIRS = { up: '0', right: '2', down: '4', left: '6' };
 ipcMain.handle('ptz', async (_e, { deviceId, dir }) => {

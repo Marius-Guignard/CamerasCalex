@@ -109,4 +109,4 @@ function isRecording(deviceId) {
   return !!(j && j.wanted);
 }
 
-module.exports = { start, stop, stopAll, isRecording };
+module.exports = { start, stop, stopAll, isRecording, safeName };

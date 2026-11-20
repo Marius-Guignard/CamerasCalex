@@ -4,7 +4,7 @@ contextBridge.exposeInMainWorld('api', {
   getConfig: () => ipcRenderer.invoke('config:get'),
   setConfig: (cfg) => ipcRenderer.invoke('config:set', cfg),
   listDevices: () => ipcRenderer.invoke('devices:list'),
-  getStream: (id) => ipcRenderer.invoke('stream:get', id),
+  getStream: (id, type) => ipcRenderer.invoke('stream:get', id, type),
   ptz: (deviceId, dir) => ipcRenderer.invoke('ptz', { deviceId, dir }),
   startRecord: (id) => ipcRenderer.invoke('record:start', id),
   stopRecord: (id) => ipcRenderer.invoke('record:stop', id),

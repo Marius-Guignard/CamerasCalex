@@ -2,6 +2,7 @@ const $ = (id) => document.getElementById(id);
 let devices = [];
 let current = null;
 let hls = null;
+let flv = null;
 const recState = {};
 
 function say(text, ok = false) {
@@ -42,28 +43,75 @@ function updateViewerRec() {
 
 function stopPlayer() {
   if (hls) { hls.destroy(); hls = null; }
+  if (flv) { try { flv.destroy(); } catch (e) { /* ignore */ } flv = null; }
   const v = $('video');
   v.removeAttribute('src');
   v.load();
 }
 
+// Lecture HLS (plus décalée) : sert de solution de secours
+async function playHls(device) {
+  const url = await window.api.getStream(device.id, 'hls');
+  if (!current || current.id !== device.id) return;
+  stopPlayer();
+  const v = $('video');
+  if (window.Hls && Hls.isSupported()) {
+    hls = new Hls({
+      lowLatencyMode: true,
+      liveSyncDurationCount: 1,
+      liveMaxLatencyDurationCount: 3,
+      maxLiveSyncPlaybackRate: 1.5,
+      backBufferLength: 5
+    });
+    hls.loadSource(url);
+    hls.attachMedia(v);
+    hls.on(Hls.Events.ERROR, (_e, data) => {
+      if (data.fatal) setTimeout(() => { if (current && current.id === device.id) startPlayer(device); }, 5000);
+    });
+  } else {
+    v.src = url;
+  }
+  v.play().catch(() => {});
+}
+
+// Lecture FLV : image presque en temps réel (1 à 3 secondes de décalage)
+async function playFlv(device) {
+  const url = await window.api.getStream(device.id, 'flv');
+  if (!current || current.id !== device.id) return;
+  stopPlayer();
+  const v = $('video');
+  flv = mpegts.createPlayer(
+    { type: 'flv', isLive: true, url, hasAudio: false },
+    {
+      enableWorker: true,
+      enableStashBuffer: false,
+      stashInitialSize: 128,
+      liveBufferLatencyChasing: true,
+      liveBufferLatencyMaxLatency: 2.5,
+      liveBufferLatencyMinRemain: 0.4,
+      lazyLoadMaxDuration: 5
+    }
+  );
+  flv.on(mpegts.Events.ERROR, () => {
+    // Si le flux direct échoue, on bascule sur la solution de secours
+    if (current && current.id === device.id) playHls(device).catch((e) => say(e.message));
+  });
+  flv.attachMediaElement(v);
+  flv.load();
+  v.play().catch(() => {});
+}
+
 async function startPlayer(device) {
   try {
-    const url = await window.api.getStream(device.id);
-    if (!current || current.id !== device.id) return; // l'utilisateur est déjà revenu en arrière
-    stopPlayer();
-    const v = $('video');
-    if (window.Hls && Hls.isSupported()) {
-      hls = new Hls({ lowLatencyMode: true });
-      hls.loadSource(url);
-      hls.attachMedia(v);
-      hls.on(Hls.Events.ERROR, (_e, data) => {
-        if (data.fatal) setTimeout(() => { if (current && current.id === device.id) startPlayer(device); }, 5000);
-      });
+    if (window.mpegts && mpegts.isSupported()) {
+      try {
+        await playFlv(device);
+      } catch (e) {
+        await playHls(device);
+      }
     } else {
-      v.src = url;
+      await playHls(device);
     }
-    v.play().catch(() => {});
     say('');
   } catch (e) {
     say(e.message + '\n(Vérifie que « IoT Video Live Stream » est bien autorisé sur ton projet Tuya.)');
