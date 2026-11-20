@@ -52,11 +52,29 @@
         <li>Suis les étapes (Wi-Fi 2,4 GHz, QR code devant la caméra).</li>
         <li>Reviens ici et clique sur le bouton ci-dessous.</li>
       </ol>
+      <button id="openPair">📶 Connecter une caméra au Wi-Fi depuis l'appli</button>
       <button id="unhide" class="ghost">Réafficher les caméras que j'ai supprimées</button>
       <div class="row end">
         <button id="closeAdd" class="ghost">Fermer</button>
         <button id="refreshAdd">J'ai ajouté ma caméra : actualiser</button>
       </div>
+    </div>
+  </div>
+
+  <div id="pairModal" class="modal hidden">
+    <div class="card">
+      <h2>Connecter une caméra au Wi-Fi</h2>
+      <ol class="steps">
+        <li>Branche la caméra et remets-la en mode association : appui d'environ 5 secondes sur <b>Reset</b>, jusqu'au voyant qui clignote.</li>
+        <li>Écris ton Wi-Fi (en <b>2,4 GHz</b>) ci-dessous, puis clique sur <b>Générer le QR code</b>.</li>
+        <li>Tiens l'écran à 15–20 cm devant l'objectif jusqu'au signal sonore.</li>
+      </ol>
+      <label>Nom du Wi-Fi <input id="wifiName" type="text" autocomplete="off"></label>
+      <label>Mot de passe du Wi-Fi <input id="wifiPass" type="password" autocomplete="off"></label>
+      <button id="makeQr">Générer le QR code</button>
+      <div id="qrBox" class="qrbox hidden"><img id="qrImg" alt="QR code"></div>
+      <div id="pairStatus" class="hint" style="margin:0"></div>
+      <div class="row end"><button id="closePair" class="ghost">Fermer</button></div>
     </div>
   </div>
 
