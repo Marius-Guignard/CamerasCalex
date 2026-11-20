@@ -1,6 +1,6 @@
 {
   "name": "cameras-calex",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Mes caméras Calex : direct et enregistrement automatique",
   "author": "Marius Guignard",
   "main": "src/main.js",
